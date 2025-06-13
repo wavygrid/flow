@@ -54,7 +54,15 @@ exports.handler = async (event, context) => {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'models/gemini-2.5-flash-preview-05-20' });
+    const model = genAI.getGenerativeModel({ 
+      model: 'models/gemini-1.5-flash',
+      generationConfig: {
+        temperature: 0.7,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 2048,
+      }
+    });
 
     // Build workflow context
     const workflowContext = {

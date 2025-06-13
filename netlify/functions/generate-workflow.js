@@ -49,7 +49,15 @@ exports.handler = async (event, context) => {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'models/gemini-2.5-flash-preview-05-20' });
+    const model = genAI.getGenerativeModel({ 
+      model: 'models/gemini-1.5-flash',
+      generationConfig: {
+        temperature: 0.7,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 2048,
+      }
+    });
 
     // Build context from conversation history
     const conversationContext = conversationHistory
@@ -92,22 +100,13 @@ exports.handler = async (event, context) => {
 
     const industryDetection = detectIndustry(userPrompt + ' ' + conversationContext);
     
-    // Construct the enhanced master prompt for Google AI
+    // Simplified prompt for faster processing
     const masterPrompt = `
-You are an expert business process analyst with deep knowledge across all industries. Your task is to analyze the user's business process and create realistic, industry-specific workflows.
+Create a business workflow based on: "${userPrompt}"
 
-CONTEXT:
-Previous conversation:
-${conversationContext}
-
-Current workflow state:
-- Existing nodes: ${currentNodes.length} nodes
-- Existing edges: ${currentEdges.length} connections
-- Question count: ${questionCount} (limit: 5 questions)
-- Detected industry: ${industryDetection.industry}
-- Industry confidence: ${industryDetection.confidence}
-
-USER'S NEW INPUT: "${userPrompt}"
+Context: ${conversationContext}
+Industry: ${industryDetection.industry}
+Question ${questionCount + 1}/5
 
 ENHANCED INSTRUCTIONS:
 1. Create REALISTIC workflows based on industry best practices and common patterns
@@ -225,12 +224,14 @@ Respond ONLY with the JSON object, no additional text or markdown formatting.
 
     console.log('Calling Google AI with enhanced industry-aware prompt');
     
-    // Call Google AI API
+    // Call Google AI API with timeout handling
+    const startTime = Date.now();
     const result = await model.generateContent(masterPrompt);
     const response = await result.response;
     const text = response.text();
+    const endTime = Date.now();
     
-    console.log('AI Response received, length:', text.length);
+    console.log(`AI Response received in ${endTime - startTime}ms, length: ${text.length}`);
 
     // Parse the AI response
     let workflowData;
