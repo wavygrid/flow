@@ -1,0 +1,36 @@
+{
+  "name": "ai-workflow-generator",
+  "version": "1.0.0",
+  "description": "Interactive AI-powered workflow generator using Next.js, React Flow, and Google AI",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "keywords": [
+    "ai",
+    "workflow",
+    "nextjs",
+    "react-flow",
+    "google-ai"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google/generative-ai": "^0.19.0",
+    "axios": "^1.7.9",
+    "next": "^14.2.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "reactflow": "^11.11.4"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^14.2.5",
+    "postcss": "^8.5.5",
+    "tailwindcss": "^3.4.10"
+  }
+}

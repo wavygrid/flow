@@ -1,0 +1,194 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-gray-200;
+  }
+  
+  body {
+    @apply bg-gray-50 text-gray-900 font-sans antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  /* Button Components */
+  .btn {
+    @apply inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
+  }
+  
+  .btn-primary {
+    @apply bg-blue-600 text-white shadow hover:bg-blue-700;
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-100 text-gray-900 shadow-sm hover:bg-gray-200;
+  }
+  
+  .btn-ghost {
+    @apply hover:bg-gray-100 hover:text-gray-900;
+  }
+  
+  .btn-sm {
+    @apply h-8 rounded-md px-3 text-xs;
+  }
+  
+  .btn-default {
+    @apply h-9 px-4 py-2;
+  }
+  
+  .btn-lg {
+    @apply h-10 rounded-md px-8;
+  }
+
+  /* Card Components */
+  .card {
+    @apply rounded-xl border border-gray-200 bg-white text-gray-900 shadow-sm flex flex-col;
+  }
+  
+  .card-header {
+    @apply flex flex-col space-y-1.5 p-6 flex-shrink-0;
+  }
+  
+  .card-title {
+    @apply font-semibold leading-none tracking-tight text-gray-900;
+  }
+  
+  .card-description {
+    @apply text-sm text-gray-600;
+  }
+  
+  .card-content {
+    @apply p-6 pt-0 flex-1;
+  }
+
+  /* Input Components */
+  .input {
+    @apply flex h-9 w-full rounded-md border border-gray-300 bg-white px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:border-transparent disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  
+  .textarea {
+    @apply flex min-h-[60px] w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:border-transparent disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  /* Badge Component */
+  .badge {
+    @apply inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+  }
+  
+  .badge-default {
+    @apply border-transparent bg-blue-600 text-white shadow hover:bg-blue-700;
+  }
+  
+  .badge-secondary {
+    @apply border-transparent bg-gray-100 text-gray-900 hover:bg-gray-200;
+  }
+}
+
+/* React Flow styles override */
+.react-flow__node {
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 6px;
+}
+
+.react-flow__node.selected {
+  box-shadow: 0 0 0 2px #3b82f6;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: #3b82f6;
+  stroke-width: 3;
+}
+
+.react-flow__minimap {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+
+.react-flow__controls {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.react-flow__controls button {
+  background-color: #ffffff;
+  border: none;
+  border-bottom: 1px solid #e2e8f0;
+  color: #374151;
+  transition: all 0.2s;
+}
+
+.react-flow__controls button:hover {
+  background-color: #f3f4f6;
+  color: #111827;
+}
+
+.react-flow__controls button:last-child {
+  border-bottom: none;
+}
+
+.react-flow__panel {
+  color: #374151;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Responsive design helpers */
+@media (max-width: 1024px) {
+  /* Stack layout vertically on tablets and smaller */
+  main {
+    flex-direction: column !important;
+    gap: 1rem !important;
+    padding: 1rem !important;
+  }
+  
+  main > div {
+    width: 100% !important;
+    height: 50% !important;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Mobile optimizations */
+  main {
+    padding: 0.5rem !important;
+    gap: 0.5rem !important;
+  }
+  
+  .card-header {
+    padding: 0.75rem !important;
+  }
+  
+  .card-header p {
+    font-size: 0.75rem !important;
+  }
+  
+  .card-content {
+    padding: 0.75rem !important;
+    padding-top: 0 !important;
+  }
+} 
