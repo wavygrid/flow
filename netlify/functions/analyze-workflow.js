@@ -44,7 +44,7 @@ exports.handler = async (event, context) => {
     }
 
     // Initialize Google AI
-    const apiKey = process.env.GOOGLE_AI_API_KEY;
+    const apiKey = process.env.GOOGLE_AI_API_KEY || 'AIzaSyAK4uzxpjBqprcdWp_o2H8He2oVW9pHPzg';
     if (!apiKey) {
       return {
         statusCode: 500,
