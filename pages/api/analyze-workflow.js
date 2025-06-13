@@ -35,7 +35,15 @@ export default async function handler(req, res) {
     // Initialize Google AI
     const apiKey = process.env.GOOGLE_AI_API_KEY || 'AIzaSyAK4uzxpjBqprcdWp_o2H8He2oVW9pHPzg';
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'models/gemini-2.5-flash-preview-05-20' });
+    const model = genAI.getGenerativeModel({ 
+      model: 'models/gemini-1.5-flash',
+      generationConfig: {
+        temperature: 0.7,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 2048,
+      }
+    });
 
     // Build workflow context
     const workflowContext = {
