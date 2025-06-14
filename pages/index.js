@@ -34,7 +34,11 @@ export default function Home() {
   const [workflowMode, setWorkflowMode] = useState('original'); // 'original' | 'optimized' | 'comparison'
   const [optimizationSummary, setOptimizationSummary] = useState(null);
 
-  // Enhanced message handling with better user feedback
+  // State for polling
+  const [currentJobId, setCurrentJobId] = useState(null);
+  const [pollingInterval, setPollingInterval] = useState(null);
+
+  // Enhanced asynchronous message handling with polling
   const handleSendMessage = async (message) => {
     if (!message.trim()) return;
 
@@ -43,99 +47,175 @@ export default function Home() {
     setIsLoading(true);
 
     try {
-      // Call our API endpoint (works for both local dev and production)
-      const apiUrl = process.env.NODE_ENV === 'production' 
-        ? '/.netlify/functions/generate-workflow'
-        : '/api/generate-workflow';
-        
-      const response = await axios.post(apiUrl, {
+      // Start the analysis job
+      const startResponse = await axios.post('/api/start-analysis', {
         userPrompt: message,
         currentNodes: nodes,
         currentEdges: edges,
         conversationHistory: conversation,
-        questionCount: questionCount // Pass current question count
+        questionCount: questionCount
       });
 
-      const { nodes: newNodes, edges: newEdges, followUpQuestion } = response.data;
+      const { jobId } = startResponse.data;
+      setCurrentJobId(jobId);
 
-      // Debug logging
-      console.log('Response received:', { 
-        newNodes: newNodes?.length, 
-        newEdges: newEdges?.length, 
-        followUpQuestion, 
-        questionCount 
-      });
-
-      // Update state with new workflow data
-      if (newNodes && newNodes.length > 0) {
-        setNodes(newNodes);
-        setEdges(newEdges || []);
-        
-        // Calculate workflow statistics
-        const decisionNodes = newNodes.filter(node => 
-          node.data.label.includes('?') || 
-          node.data.label.toLowerCase().includes('decision') ||
-          node.data.label.toLowerCase().includes('approve')
-        );
-        
-        const processNodes = newNodes.filter(node => 
-          node.type === 'default' && 
-          !decisionNodes.includes(node)
-        );
-
-        setWorkflowStats({
-          totalProcesses: processNodes.length,
-          decisionPoints: decisionNodes.length,
-          automationOpportunities: Math.floor(processNodes.length * 0.3) // Estimate 30% automation potential
-        });
-      }
-      
-      // Handle AI response based on question limit
-      if (followUpQuestion && questionCount < 4) {
-        // Still within question limit - add follow-up question
-        console.log('Adding follow-up question:', followUpQuestion);
-        setConversation(prev => [...prev, { sender: 'ai', text: followUpQuestion }]);
-        setQuestionCount(prev => prev + 1);
-      } else if (questionCount >= 4 || !followUpQuestion) {
-        // Reached question limit or no more questions - provide final workflow message
-        const completionMessage = newNodes && newNodes.length > 0 
-          ? `Perfect! I've created your comprehensive workflow diagram with ${newNodes.length} steps and ${newEdges?.length || 0} connections. The diagram includes all the critical processes, decision points, and realistic business flows based on our conversation.\n\n✨ Your workflow is complete and ready for analysis!`
-          : 'I\'ve analyzed your process and created a comprehensive workflow diagram. Review the visual representation above to see all the steps, decision points, and connections in your business process.';
-          
-        console.log('Adding completion message');
-        setConversation(prev => [...prev, { 
-          sender: 'ai', 
-          text: completionMessage
-        }]);
-        setQuestionCount(5); // Ensure we're at the limit
-      } else if (followUpQuestion) {
-        // Fallback: just add the question if we have one
-        console.log('Fallback: adding question:', followUpQuestion);
-        setConversation(prev => [...prev, { sender: 'ai', text: followUpQuestion }]);
-        setQuestionCount(prev => prev + 1);
-      }
-
-    } catch (error) {
-      console.error('Error calling workflow generator:', error);
-      console.error('Error details:', error.response?.data || error.message);
-      
-      let errorMessage = 'I encountered an issue analyzing your process. ';
-      if (error.response?.status === 429) {
-        errorMessage += 'The AI service is currently busy. Please try again in a moment.';
-      } else if (error.response?.status >= 500) {
-        errorMessage += 'There\'s a temporary service issue. Please try again.';
-      } else {
-        errorMessage += 'Please try rephrasing your workflow description or providing more specific details.';
-      }
-      
+      // Add status message to conversation
       setConversation(prev => [...prev, { 
         sender: 'ai', 
-        text: errorMessage
+        text: '🔄 **Analyzing your workflow...** This may take 30-120 seconds. I\'ll update you when complete!' 
       }]);
-    } finally {
+
+      // Start polling for results
+      startPolling(jobId);
+
+    } catch (error) {
+      console.error('Error starting analysis:', error);
       setIsLoading(false);
+      setConversation(prev => [...prev, { 
+        sender: 'ai', 
+        text: '❌ Sorry, I encountered an error starting the analysis. Please try again.' 
+      }]);
     }
   };
+
+  // Polling function to check job status
+  const startPolling = (jobId) => {
+    let attempts = 0;
+    const maxAttempts = 60; // 5 minutes max (60 * 5 seconds)
+    
+    const pollInterval = setInterval(async () => {
+      attempts++;
+      
+      try {
+        const statusResponse = await axios.get(`/api/check-status?jobId=${jobId}`);
+        const { status, result, error, message, runtimeSeconds } = statusResponse.data;
+
+        console.log(`Polling attempt ${attempts}: ${status} (${runtimeSeconds}s)`);
+
+        switch (status) {
+          case 'pending':
+            // Still waiting, continue polling
+            break;
+
+          case 'processing':
+            // Update user with progress
+            if (attempts % 4 === 0) { // Every 20 seconds
+              setConversation(prev => {
+                const newConv = [...prev];
+                const lastMessage = newConv[newConv.length - 1];
+                if (lastMessage.sender === 'ai' && lastMessage.text.includes('🔄')) {
+                  lastMessage.text = `🔄 **Still analyzing...** (${runtimeSeconds}s elapsed) Almost done!`;
+                }
+                return newConv;
+              });
+            }
+            break;
+
+          case 'completed':
+            // Success! Update the UI
+            clearInterval(pollInterval);
+            setPollingInterval(null);
+            setCurrentJobId(null);
+            setIsLoading(false);
+
+            const { nodes: newNodes, edges: newEdges, followUpQuestion } = result;
+
+            // Update state with new workflow data
+            if (newNodes && newNodes.length > 0) {
+              setNodes(newNodes);
+              setEdges(newEdges || []);
+              
+              // Calculate workflow statistics
+              const decisionNodes = newNodes.filter(node => 
+                node.data.label.includes('?') || 
+                node.data.label.toLowerCase().includes('decision') ||
+                node.data.label.toLowerCase().includes('approve')
+              );
+              
+              const processNodes = newNodes.filter(node => 
+                node.type === 'default' && 
+                !decisionNodes.includes(node)
+              );
+
+                             setWorkflowStats({
+                 totalProcesses: processNodes.length,
+                 decisionPoints: decisionNodes.length,
+                 automationOpportunities: Math.floor(processNodes.length * 0.3)
+               });
+             }
+
+             // Handle AI response and follow-up questions
+             let aiResponseText = '✅ **Workflow analysis complete!** ';
+             if (followUpQuestion && followUpQuestion.trim()) {
+               setQuestionCount(prev => Math.min(prev + 1, 4));
+               aiResponseText += `\n\n**Follow-up question:** ${followUpQuestion}`;
+             } else {
+               aiResponseText += 'Your workflow is ready! You can now analyze or optimize it using the buttons above.';
+             }
+
+             setConversation(prev => [...prev, { sender: 'ai', text: aiResponseText }]);
+             break;
+
+           case 'failed':
+             // Error occurred
+             clearInterval(pollInterval);
+             setPollingInterval(null);
+             setCurrentJobId(null);
+             setIsLoading(false);
+
+             setConversation(prev => [...prev, { 
+               sender: 'ai', 
+               text: `❌ **Analysis failed:** ${error || 'Unknown error occurred'}. Please try again.` 
+             }]);
+             break;
+
+           default:
+             console.warn(`Unknown job status: ${status}`);
+             break;
+         }
+
+         // Timeout check
+         if (attempts >= maxAttempts) {
+           clearInterval(pollInterval);
+           setPollingInterval(null);
+           setCurrentJobId(null);
+           setIsLoading(false);
+
+           setConversation(prev => [...prev, { 
+             sender: 'ai', 
+             text: '⏰ **Analysis timed out.** The process is taking longer than expected. Please try again with a simpler request.' 
+           }]);
+         }
+
+       } catch (pollError) {
+         console.error('Error polling job status:', pollError);
+         
+         // Don't stop polling on single errors, but limit retries
+         if (attempts >= maxAttempts) {
+           clearInterval(pollInterval);
+           setPollingInterval(null);
+           setCurrentJobId(null);
+           setIsLoading(false);
+
+           setConversation(prev => [...prev, { 
+             sender: 'ai', 
+             text: '❌ **Connection error.** Unable to check analysis status. Please try again.' 
+           }]);
+         }
+       }
+     }, 5000); // Poll every 5 seconds
+
+     setPollingInterval(pollInterval);
+   };
+
+   // Cleanup polling on component unmount
+   useEffect(() => {
+     return () => {
+       if (pollingInterval) {
+         clearInterval(pollingInterval);
+       }
+     };
+   }, [pollingInterval]);
 
   // Phase 1: Analysis function
   const handleAnalyzeWorkflow = async () => {

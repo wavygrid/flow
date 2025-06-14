@@ -168,22 +168,45 @@ The enhanced AI system provides:
 
 *Powered by advanced AI that understands your industry and asks the right questions.*
 
+## 🏗️ **New Asynchronous Architecture**
+
+This application now uses a **robust asynchronous polling architecture** to handle long-running AI operations without timeout issues:
+
+### **Architecture Benefits:**
+- ✅ **No Timeouts**: Background functions can run indefinitely
+- ✅ **Real-time Updates**: Live progress indicators every 5 seconds  
+- ✅ **Better UX**: Immediate feedback and smooth interactions
+- ✅ **Scalable**: Multiple users can run analyses concurrently
+- ✅ **Robust**: Comprehensive error handling and recovery
+
+### **How It Works:**
+1. **User Input** → Fast job creation (< 1 second)
+2. **Background Processing** → AI analysis without time limits
+3. **Real-time Polling** → Status updates every 5 seconds
+4. **Result Delivery** → Seamless workflow display
+
 ## Project Structure
 
 ```
 ├── components/
-│   ├── ChatInterface.js      # Chat interface for user input
+│   ├── ChatInterface.js      # Chat interface with async polling
 │   └── WorkflowDiagram.js     # React Flow diagram component
+├── lib/
+│   └── kv.js                 # KV store for job management
 ├── netlify/
 │   └── functions/
-│       └── generate-workflow.js  # Serverless function for AI processing
+│       └── process-workflow.js  # Background AI processing function
 ├── pages/
+│   ├── api/
+│   │   ├── start-analysis.js # Fast job creation API
+│   │   └── check-status.js   # Status polling API
 │   ├── _app.js               # Next.js app configuration
-│   └── index.js              # Main application page
+│   └── index.js              # Main app with async polling logic
 ├── styles/
 │   └── globals.css           # Global styles and Tailwind CSS
 ├── public/                   # Static assets
 ├── netlify.toml              # Netlify configuration
+├── IMPLEMENTATION_SUMMARY.md # Complete implementation guide
 └── package.json              # Dependencies and scripts
 ```
 
